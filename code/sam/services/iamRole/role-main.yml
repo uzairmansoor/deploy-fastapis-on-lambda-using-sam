@@ -1,0 +1,44 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Driver template to deploy iam roles
+Parameters:
+  project:
+    Type: String
+    Default: netsol-web
+    Description: Project Name
+  app:
+    Type: String
+    Default: app
+    Description: App name
+  env:
+    Type: String
+    AllowedValues:
+      - dev
+      - qa
+      - uat
+      - prod
+    Default: dev
+    Description: Environment name
+  s3ArtifactPath:
+    Type: String
+    Default: "https://netsol-web-app-dev-us-east-1-339713058918.s3.amazonaws.com/code/sam/services""
+    Description: "Artifact bucket path"
+
+Resources:
+  iamRole:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub "${s3ArtifactPath}/iamRole/role-app.yml"
+      Parameters:
+        project: !Ref project
+        app: !Ref app
+        env: !Ref env
+       
+Outputs:
+ iamRole:
+  Value: !Ref iamRole
+  Export: 
+    Name: !Sub "${project}-${app}-${env}-iamRole"
+
+
+ 
+ 

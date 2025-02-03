@@ -1,0 +1,171 @@
+AWSTemplateFormatVersion: "2010-09-09" 
+Transform: AWS::Serverless-2016-10-31
+Description: Driver template to deploy ascent-chatbot development environment
+Parameters:
+  project:
+    Type: String
+    Default: ascent-chatbot
+    Description: Project Name
+  env:
+    Type: String
+    Default: dev
+    AllowedValues: [prod, dev, qa, stage]
+    Description: Environment Name
+  app:
+    Type: String
+    Default: app
+    Description: Name of the app
+  s3ArtifactPath:
+    Type: String
+    Default: "https://ascent-chatbot-dev-app-us-east-1-677366433603.s3.amazonaws.com/code/sam/services"
+    Description: "Artifact bucket path"
+Resources:
+  iamRole:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub "${s3ArtifactPath}/iamRole/role-app.yml"
+      Parameters:
+        project: !Ref project
+        app: !Ref app
+        env: !Ref env
+      Tags:
+        - Key: project
+          Value: !Ref project
+        - Key: environment
+          Value: !Ref env
+        - Key: app
+          Value: !Ref app
+  ecrFastApiRepo:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub "${s3ArtifactPath}/ecr/ecr-app.yml"
+      Parameters:
+        project: !Ref project
+        app: !Ref app
+        env: !Ref env
+        imageTagMutability: 'MUTABLE' 
+      Tags:
+          - Key: project
+            Value: !Ref project
+          - Key: app
+            Value: !Ref app
+          - Key: env
+            Value: !Ref env
+  ascentChatbotLambdaFunc:
+    Type: AWS::CloudFormation::Stack
+    DependsOn:
+      - iamRole
+      - ecrFastApiRepo
+    Properties:
+      TemplateURL: !Sub "${s3ArtifactPath}/lambdaFunction/lambdaFunction-app.yml"
+      Parameters:
+        project: !Ref project
+        app: !Ref app
+        env: !Ref env
+        lambdaFunctionName: !Sub "${project}-${app}-${env}-ascentChatbotLambdaFunc"
+        runtimeVersion: python3.13
+        timeout: 120
+        lambdaExecutionRoleArn: !GetAtt iamRole.Outputs.lambdaRoleForAscentChatbotArn
+        ecrRepositoryUri: !GetAtt ecrFastApiRepo.Outputs.ecrRepositoryUri
+        imageTag: latest
+      Tags:
+          - Key: project
+            Value: !Ref project
+          - Key: app
+            Value: !Ref app
+          - Key: env
+            Value: !Ref env
+  s3CodePipelineBucket:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub "${s3ArtifactPath}/s3/s3-app.yml"
+      Parameters:
+        project: !Ref project
+        env: !Ref env
+        app: pipeline
+        s3BucketAccessControl: Private
+        s3VersioningStatus: Enabled
+        s3ObjectOwnership: BucketOwnerPreferred
+        sseAlgorithm: AES256
+        indexDocument: index.html
+        errorDocument: error.html
+        enableWebsiteConfiguration: no
+        enableCfWritePolicy: no
+       # enableS3BucketPolicy: no 
+        enableAlbBucketPolicy: no
+  fastApiCodebuild:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub '${s3ArtifactPath}/codeBuild/codeBuild-app.yml'
+      Parameters:
+        project: !Ref project
+        app: !Ref app
+        env: !Ref env
+        codeBuildProjectName: !Sub '${project}-${app}-${env}-fastApiCodebuildProject'
+        iamCodeBuildRoleArn: !GetAtt iamRole.Outputs.codebuildExecutionRoleArn
+        buildSpecFilePath: 'buildspec.yml'
+        codeBuildEnvType: "LINUX_CONTAINER"
+        codeBuildEnvComputeType: "BUILD_GENERAL1_SMALL"
+        codeBuildEnvImage: "aws/codebuild/amazonlinux2-x86_64-standard:5.0"
+        codeBuildPrivilegedMode: false
+        codeBuildsourceType: "CODEPIPELINE"
+        ecrRepoName: !GetAtt ecrFastApiRepo.Outputs.ecrRepositoryName
+        dockerhubUsername: uzairmansoor
+      Tags:
+        - Key: project
+          Value: !Ref project
+        - Key: app
+          Value: !Ref app
+        - Key: env
+          Value: !Ref env
+  fastApiCodepipeline:
+    Type: AWS::CloudFormation::Stack
+    DependsOn:
+    - fastApiCodebuild
+    Properties:
+      TemplateURL: !Sub "${s3ArtifactPath}/codePipeline/codePipeline-app.yml"
+      Parameters:
+        project: !Ref project
+        app: !Ref app
+        env: !Ref env
+        gitHubOwner: 'uzairmansoor-prof'                              
+        githubRepositoryName: 'netsol_ascent_chatbot'
+        githubBranch: main
+        lambdaFunctionName: !GetAtt ascentChatbotLambdaFunc.Outputs.lambdaFunctionName
+        codePipelineRole: !GetAtt iamRole.Outputs.codePipelineRoleArn
+        codePipelineAppName: !Sub "${project}-${app}-${env}-fastApiCodepipeline"
+        codeBuildProject: !GetAtt fastApiCodebuild.Outputs.codeBuildProject   
+        s3CodePipelineBucket: !GetAtt s3CodePipelineBucket.Outputs.s3Bucket 
+        codeStarConnectionId: !Sub "arn:aws:codeconnections:${AWS::Region}:${AWS::AccountId}:connection/cfe118b2-cf87-4d72-b389-e5d31176d476"
+      Tags:
+        - Key: project
+          Value: !Ref project
+        - Key: app
+          Value: !Ref app
+        - Key: env
+          Value: !Ref env
+Outputs:
+  iamRole:
+    Value: !Ref iamRole
+    Export:
+      Name: !Sub "${AWS::StackName}-iamRole"
+  ecrFastApiRepo:
+    Value: !Ref ecrFastApiRepo
+    Export:
+      Name: !Sub "${AWS::StackName}-ecrFastApiRepo"
+  ascentChatbotLambdaFunc:
+    Value: !Ref ascentChatbotLambdaFunc
+    Export:
+      Name: !Sub "${AWS::StackName}-ascentChatbotLambdaFunc"
+  s3CodePipelineBucket:
+    Value: !Ref s3CodePipelineBucket
+    Export:
+      Name: !Sub "${AWS::StackName}-s3CodePipelineBucket"
+  fastApiCodebuild:
+    Value: !Ref fastApiCodebuild
+    Export:
+      Name: !Sub "${AWS::StackName}-fastApiCodebuild"
+  fastApiCodepipeline:
+    Value: !Ref fastApiCodepipeline
+    Export:
+      Name: !Sub "${AWS::StackName}-fastApiCodepipeline"

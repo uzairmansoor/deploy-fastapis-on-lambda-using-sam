@@ -1,0 +1,61 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "CloudFormation Template to deploy lambda functions"
+
+Parameters:
+  project:
+    Type: String
+    Description: Project name
+  env:
+    Type: String
+    Default: stage
+    AllowedValues: [prod, dev, qa, stage]
+    Description: Environment name
+  app:
+    Type: String
+    Default: app
+    Description: Name of the app
+  lambdaFunctionName:
+    Type: String
+    Description: Name of the lambda function
+  runtimeVersion:
+    Type: String
+    Description: The identifier of the function's runtime
+  timeout:
+    Type: String
+    Description: Amount of time (in seconds) that lambda allows a function to run before stopping it
+  lambdaExecutionRoleArn:
+    Type: String
+    Description: ARN of lambda execution role
+  ecrRepositoryUri:
+    Type: String
+    Description: ECR Repository URI
+  imageTag:
+    Type: String
+    Description: Tag of an ECR Image
+
+Resources:
+  lambdaFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Ref lambdaFunctionName
+      PackageType: Image
+      Timeout: !Ref timeout
+      Role: !Ref lambdaExecutionRoleArn
+      Code:
+        ImageUri: !Sub "${ecrRepositoryUri}:${imageTag}"
+      Tags:
+          - Key: Name
+            Value: !Sub ${project}-${env}-${app}-customAlarmsLambdaFunction
+          - Key: project
+            Value: !Ref project
+          - Key: env
+            Value: !Ref env
+Outputs:
+  lambdaFunctionName:
+    Value: !Ref lambdaFunction
+    Export:
+      Name: !Sub "${lambdaFunctionName}"
+  lambdaFunctionArn:
+    Value: !GetAtt lambdaFunction.Arn
+    Export:
+      Name: !Sub "${lambdaFunctionName}-Arn"

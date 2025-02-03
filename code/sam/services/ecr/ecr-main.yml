@@ -1,0 +1,48 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Driver template to create ecr repository
+Parameters:
+  project:
+    Type: String
+    Default: netsol-web
+    Description: Project Name
+  app:
+    Type: String
+    Default: app
+    Description: App name
+  env:
+    Type: String
+    AllowedValues:
+      - dev
+      - qa
+      - uat
+      - prod
+    Default: dev
+    Description: Environment name
+  s3ArtifactPath:
+    Type: String
+    Default: "https://netsol-web-app-dev-us-east-1-339713058918.s3.amazonaws.com/code/cfn/services"
+    Description: "Artifact bucket path"
+Resources:
+  ecrRepo:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub "${s3ArtifactPath}/ecs/ecs-app.yml"
+      Parameters:
+        project: !Ref project
+        app: !Ref app
+        env: !Ref env
+        repoName: !Sub '${project}-${app}'
+        imageTagMutability: 'MUTABLE' 
+      Tags:
+          - Key: project
+            Value: !Ref project
+          - Key: app
+            Value: !Ref app
+          - Key: env
+            Value: !Ref env
+  
+Outputs:
+  ecrRepo:
+    Value: !Ref ecrRepo
+    Export: 
+      Name: !Sub "${project}-${app}-${env}-ecrRepo"

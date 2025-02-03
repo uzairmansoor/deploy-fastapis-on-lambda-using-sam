@@ -1,0 +1,111 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Template to create code pipeline
+Parameters:
+  project:
+    Type: String
+    Description: Project Name
+  app:
+    Type: String
+    Description: App name
+  env:
+    Type: String
+    AllowedValues: [prod, dev, qa, stage]
+    Description: Environment name 
+  codeStarConnectionId:
+    Type: String
+    NoEcho: true
+    Description: Code Star Connection Id
+  gitHubOwner:
+    Type: String
+    Default: ''
+    Description: Owner of Github
+  githubRepositoryName:
+    Type: String
+    Description: Specify repo name for pipeline
+  githubBranch:
+    Type: String
+    Description: Specify brnach name for pipeline        
+  codeBuildProject: 
+    Type: String
+    Description: Specify codebuild project      
+  s3CodePipelineBucket:
+    Type: String
+    Description: Specify bucket name for artifacts
+  codePipelineRole:
+    Type: String
+    Description: Arn of the Code pipeline role
+  codePipelineAppName:
+    Type: String
+    Default: ''
+    Description: Application name for code pipeline
+  lambdaFunctionName: 
+    Type: String
+    Default: ''
+    Description: The name of the Lambda Function
+  
+Resources:
+  codePipeline:
+    Type: AWS::CodePipeline::Pipeline
+    Properties:
+        ArtifactStore: 
+            Location: !Ref s3CodePipelineBucket
+            Type: S3
+        PipelineType: V2
+        Name: !Ref codePipelineAppName
+        RoleArn: !Ref codePipelineRole
+        Stages:
+            - 
+              Name: Source
+              Actions:
+                - 
+                  Name: Source
+                  ActionTypeId:
+                    Category: Source
+                    Version: '1'
+                    Owner: AWS
+                    Provider: CodeStarSourceConnection
+                  Configuration:
+                    ConnectionArn: !Ref codeStarConnectionId
+                    FullRepositoryId: !Sub "${gitHubOwner}/${githubRepositoryName}"
+                    BranchName: !Ref githubBranch
+                  OutputArtifacts:
+                    - Name: SourceArtifact
+                  RunOrder: 1
+            - 
+              Name: Build
+              Actions:
+                - 
+                  Name: CodeBuild
+                  ActionTypeId:
+                    Category: Build
+                    Owner: AWS
+                    Provider: CodeBuild
+                    Version: '1'
+                  Configuration:
+                    ProjectName: !Ref codeBuildProject
+                  InputArtifacts:
+                    - Name: SourceArtifact
+                  OutputArtifacts:
+                    - Name: BuildArtifact
+                  RunOrder: 2   
+            -
+              Name: InvokeLambda
+              Actions:
+                - Name: DeployToLambda
+                  ActionTypeId:
+                    Owner: AWS
+                    Category: Invoke
+                    Version: '1'
+                    Provider: Lambda
+                  Configuration:
+                    FunctionName: !Ref lambdaFunctionName
+                  InputArtifacts:
+                    - Name: BuildArtifact
+                  RunOrder: 1
+
+Outputs:
+  codePipeline:
+    Description: CodePipeline App
+    Value: !Ref codePipeline
+    Export: 
+      Name: !Sub "${project}-${app}-${env}-${codePipelineAppName}"

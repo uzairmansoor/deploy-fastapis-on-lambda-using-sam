@@ -1,0 +1,155 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Template to create IAM roles
+Parameters:
+  project:
+    Type: String
+    Description: Project Name
+  app:
+    Type: String
+    Description: App name
+  env:
+    Type: String
+    AllowedValues: [prod, dev, qa, stage]
+    Description: Environment name
+Resources:
+  lambdaRoleForAscentChatbot:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub '${project}-${app}-${env}-lambdaRoleForAscentChatbot'
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action: "sts:AssumeRole"
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+
+  codebuildExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub '${project}-${app}-${env}-codeBuildRole'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+            - codebuild.amazonaws.com
+          Action:
+          - sts:AssumeRole
+      Path: "/"
+      ManagedPolicyArns: 
+        - !Sub "arn:${AWS::Partition}:iam::aws:policy/AmazonEC2ContainerRegistryPowerUser"
+        - !Sub "arn:${AWS::Partition}:iam::aws:policy/AdministratorAccess"
+      Policies:
+      - PolicyName: !Sub '${project}-${app}-${env}-codeBuild-Policy'
+        PolicyDocument:
+          Version: 2012-10-17
+          Statement:
+            -  # Allow codebuild to write to cloudwatch
+              Sid: CloudWatchLogsPermissionsForAllCodeBuildProjects
+              Effect: Allow
+              Action:
+                - logs:*
+              Resource:
+                - !Sub arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/codebuild/*
+                - !Sub arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/codebuild/*:*
+            -  # Allow codebuild to list and get objects from any specific bucket
+              Sid: S3BucketPolicy
+              Effect: Allow
+              Action:
+                - s3:GetBucket*
+                - s3:ListBucket*
+                - s3:PutObject
+                - s3:GetObject
+                - s3:GetObjectVersion
+              Resource:  "*"
+            -  # Allow codebuild to list and get parameter from AWS SSM Parameter store
+              Sid: SSMPolicy
+              Effect: Allow
+              Action:
+                - ssm:GetParameterHistory
+                - ssm:PutParameter
+                - ssm:DeleteParameter
+                - ssm:GetParameterHistory
+                - ssm:GetParametersByPath
+                - ssm:GetParameters
+                - ssm:GetParameter
+                - ssm:DeleteParameters
+              Resource:  "*"
+            -  # Allow codebuild Actions
+              Sid: CodeBuildPolicy
+              Effect: Allow
+              Action:
+                - codebuild:CreateReportGroup
+                - codebuild:CreateReport
+                - codebuild:UpdateReport
+                - codebuild:BatchPutTestCases
+                - codebuild:BatchPutCodeCoverages
+              Resource: '*'
+      Tags:
+        - Key: "project"
+          Value: !Ref project
+        - Key: "env"
+          Value: !Ref env
+
+  codePipelineRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub "${project}-${app}-${env}-codePipelineServiceRole-${AWS::Region}"
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+            - codepipeline.amazonaws.com
+          Action:
+          - sts:AssumeRole
+      ManagedPolicyArns:
+        - !Sub "arn:${AWS::Partition}:iam::aws:policy/AdministratorAccess"
+      Policies: 
+      - PolicyName: !Sub '${project}-${app}-${env}-codeBuild-Policy'
+        PolicyDocument:
+          Version: 2012-10-17
+          Statement:
+            -  # Allow codepipeline to perform codebuild actions on specific project
+              Sid: codeBuildPolicy
+              Effect: Allow
+              Action:
+                - codebuild:StartBuild
+                - codebuild:StopBuild
+                - codebuild:StartBuildBatch
+                - codebuild:StopBuildBatch
+                - codebuild:RetryBuild
+                - codebuild:RetryBuildBatch
+                - codebuild:BatchGet*
+                - codebuild:GetResourcePolicy
+                - codebuild:DescribeTestCases
+                - codebuild:DescribeCodeCoverages
+                - codebuild:List*
+              Resource: !Sub 'arn:aws:codebuild:${AWS::Region}:${AWS::AccountId}:*/*'
+      RoleName: !Sub "${project}-${app}-${env}-codePipelineServiceRole-${AWS::Region}"
+      Tags:
+        - Key: "project"
+          Value: !Ref project
+        - Key: "env"
+          Value: !Ref env
+  
+Outputs:
+  lambdaRoleForAscentChatbotArn:
+    Value: !GetAtt lambdaRoleForAscentChatbot.Arn
+    Export:
+      Name: !Sub "${project}-${app}-${env}-lambdaRoleForAscentChatbotArn"
+  codebuildExecutionRoleArn:
+    Value: !GetAtt codebuildExecutionRole.Arn
+    Export:
+      Name: !Sub "${project}-${app}-${env}-codebuildExecutionRoleArn"
+  codePipelineRoleArn:
+    Value: !GetAtt codePipelineRole.Arn
+    Export:
+      Name: !Sub "${project}-${app}-${env}-codePipelineRoleArn"

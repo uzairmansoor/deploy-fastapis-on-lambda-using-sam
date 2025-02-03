@@ -1,0 +1,92 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Template to create CodeBuild project 
+Parameters:
+  project:
+    Type: String
+    Description: Project Name
+  app:
+    Type: String
+    Description: App name
+  env:
+    Type: String
+    AllowedValues: [prod, dev, qa, stage]
+    Description: Environment name
+  codeBuildProjectName:
+    Type: String
+    Description: Enter the CodeBuild Project Name.
+  iamCodeBuildRoleArn:
+    Type: String
+    Description: codebuild role ARN.
+  codeBuildEnvType:
+    Type: String
+    Description: Enter the codeBuild Environment Type.
+  codeBuildEnvComputeType:
+    Type: String
+    Description: Enter the codeBuild Environment Compute Type.
+  codeBuildEnvImage:
+    Type: String
+    Description: Enter the codeBuild Environment Image.
+  codeBuildsourceType:
+    Type: String
+    Description: Enter the codeBuild source type.
+  buildSpecFilePath:
+    Type: String
+    Description: Enter the Build Spec file path
+  codeBuildPrivilegedMode:
+    Type: String
+    Default: 'false'
+    Description: Enables running the Docker daemon inside a Docker container. Set to true only if the build project is used to build Docker images.
+  ecrRepoName:
+    Type: String
+    Description: Enter the ECR repository name
+  dockerhubUsername:
+    Type: String
+    Default: ""
+    Description: Enter dockker hub username
+  
+Resources:
+  codeBuildProject:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Name: !Ref codeBuildProjectName
+      ServiceRole: !Ref iamCodeBuildRoleArn
+      Artifacts:
+        Type: CODEPIPELINE
+      LogsConfig:
+        CloudWatchLogs:
+          Status: 'ENABLED'
+      Environment:
+        Type: !Ref codeBuildEnvType
+        ComputeType: !Ref codeBuildEnvComputeType
+        Image: !Ref codeBuildEnvImage
+        PrivilegedMode: !Ref codeBuildPrivilegedMode
+        EnvironmentVariables:
+          - Name: AWS_DEFAULT_REGION
+            Type: PLAINTEXT
+            Value: !Sub '${AWS::Region}'
+          - Name: AWS_ACCOUNT_ID
+            Type: PLAINTEXT
+            Value: !Sub '${AWS::AccountId}'
+          - Name: IMAGE_REPO_NAME
+            Type: PLAINTEXT
+            Value: !Ref ecrRepoName
+          - Name: AWS_ENVIRONMENT
+            Type: PLAINTEXT
+            Value: !Ref env
+          - Name: DOCKERHUB_USERNAME
+            Type: PLAINTEXT
+            Value: !Ref dockerhubUsername
+      Source:
+        Type: !Ref codeBuildsourceType
+        BuildSpec: !Ref buildSpecFilePath
+Outputs:
+  codeBuildProject:  
+    Description: Build Project Name.
+    Value: !Ref codeBuildProject
+    Export:
+      Name: !Sub '${project}-${app}-${env}-${codeBuildProjectName}-${AWS::Region}'
+  codeBuildProjectArn:  
+    Description: Build Project Arn.
+    Value: !GetAtt codeBuildProject.Arn
+    Export:
+      Name: !Sub '${project}-${app}-${env}-${AWS::Region}--${codeBuildProjectName}'

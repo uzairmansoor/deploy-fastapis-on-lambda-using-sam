@@ -1,0 +1,63 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Template to create ecr repository
+Parameters:
+  project:
+    Type: String
+    Description: Project Name
+  app:
+    Type: String
+    Description: App name
+  env:
+    Type: String
+    AllowedValues: [prod, dev, qa, stage]
+    Description: Environment name
+  imageTagMutability:
+     Type: String
+     Description: The tag mutability setting for the repository
+     
+Resources:
+  ecrRepository:
+     Type: AWS::ECR::Repository
+     Properties:
+      RepositoryName: !Sub '${project}-${app}-${env}-ecr-repo'
+      EncryptionConfiguration: 
+        EncryptionType: 'AES256'
+      ImageTagMutability: !Ref imageTagMutability
+      RepositoryPolicyText: 
+        Version: "2012-10-17"
+        Statement: 
+          - 
+            Sid: AllowPushPull
+            Effect: Allow
+            Principal: 
+              AWS: 
+                - !Sub 'arn:aws:iam::${AWS::AccountId}:root'
+            Action: 
+              - "ecr:GetDownloadUrlForLayer"
+              - "ecr:BatchGetImage"
+              - "ecr:BatchCheckLayerAvailability"
+              - "ecr:PutImage"
+              - "ecr:InitiateLayerUpload"
+              - "ecr:UploadLayerPart"
+              - "ecr:CompleteLayerUpload"
+      Tags: 
+        - Key: env
+          Value: !Ref env
+        - Key: Name
+          Value: !Sub '${project}-${app}-${env}-ecrRepo'
+        - Key: project
+          Value: !Ref project
+Outputs:
+  ecrRepositoryName:
+    Description: Repository Name
+    Value: !Ref ecrRepository
+    Export:
+      Name: !Sub '${project}-${app}-${env}-ecrRepo'
+  ecrRepositoryUri:
+    Description: Repository URI
+    Value: !GetAtt ecrRepository.RepositoryUri
+    Export:
+      Name: !Sub '${project}-${app}-${env}-ecrRepositoryUri'
+
+  
+  
