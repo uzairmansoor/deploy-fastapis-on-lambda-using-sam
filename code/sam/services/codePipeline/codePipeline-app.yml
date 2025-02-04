@@ -88,20 +88,20 @@ Resources:
                   OutputArtifacts:
                     - Name: BuildArtifact
                   RunOrder: 2   
-            -
-              Name: InvokeLambda
-              Actions:
-                - Name: DeployToLambda
-                  ActionTypeId:
-                    Owner: AWS
-                    Category: Invoke
-                    Version: '1'
-                    Provider: Lambda
-                  Configuration:
-                    FunctionName: !Ref lambdaFunctionName
-                  InputArtifacts:
-                    - Name: BuildArtifact
-                  RunOrder: 1
+            # -
+            #   Name: InvokeLambda
+            #   Actions:
+            #     - Name: DeployToLambda
+            #       ActionTypeId:
+            #         Owner: AWS
+            #         Category: Invoke
+            #         Version: '1'
+            #         Provider: Lambda
+            #       Configuration:
+            #         FunctionName: !Ref lambdaFunctionName
+            #       InputArtifacts:
+            #         - Name: BuildArtifact
+            #       RunOrder: 1
 
 Outputs:
   codePipeline:

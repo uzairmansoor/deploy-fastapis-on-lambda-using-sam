@@ -45,17 +45,22 @@ Resources:
         ImageUri: !Sub "${ecrRepositoryUri}:${imageTag}"
       Tags:
           - Key: Name
-            Value: !Sub ${project}-${env}-${app}-customAlarmsLambdaFunction
+            Value: !Sub ${project}-${env}-${app}-{lambdaFunctionName}
           - Key: project
             Value: !Ref project
           - Key: env
             Value: !Ref env
+  # lambdaFunctionUrl:
+  #   Type: AWS::Lambda::Url
+  #   Properties:
+  #     AuthType: NONE
+  #     TargetFunctionArn: !GetAtt lambdaFunction.Arn
 Outputs:
   lambdaFunctionName:
     Value: !Ref lambdaFunction
     Export:
       Name: !Sub "${lambdaFunctionName}"
-  lambdaFunctionArn:
-    Value: !GetAtt lambdaFunction.Arn
-    Export:
-      Name: !Sub "${lambdaFunctionName}-Arn"
+  # lambdaFunctionArn:
+  #   Value: !GetAtt lambdaFunction.Arn
+  #   Export:
+  #     Name: !Sub "${lambdaFunctionName}-Arn"

@@ -1,0 +1,89 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "CloudFormation Template to deploy lambda functions"
+
+Parameters:
+  project:
+    Type: String
+    Description: Project name
+  env:
+    Type: String
+    Default: stage
+    AllowedValues: [prod, dev, qa, stage]
+    Description: Environment name
+  app:
+    Type: String
+    Default: app
+    Description: Name of the app
+  # lambdaFunctionArn:
+  #   Type: String
+  #   Description: ARN of the lambda function
+
+Resources:
+  ### REST API Gateway ###
+    apiGatewayRestApi:
+      Type: AWS::ApiGateway::RestApi
+      Properties:
+        Name: !Sub ${project}-${env}-${app}-rest-api
+
+    apiGatewayRootResourceApi:
+      Type: AWS::ApiGateway::Resource
+      Properties:
+        ParentId: !GetAtt apiGatewayRestApi.RootResourceId
+        PathPart: /
+        RestApiId: !Ref apiGatewayRestApi
+
+    # ApiGatewayRootMethodApi:
+    #   Type: AWS::ApiGateway::Method
+    #   Properties:
+    #     RestApiId: !Ref apiGatewayRestApi
+    #     ResourceId: !Ref apiGatewayRootResourceApi
+    #     HttpMethod: ANY
+    #     AuthorizationType: NONE
+    #     ApiKeyRequired: false
+    #     Integration:
+    #       Type: AWS_PROXY
+    #       IntegrationHttpMethod: POST
+    #       Uri: 
+    #       Fn::Sub: 
+    #         - "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${LambdaFunctionArn}/invocations"
+    #         - LambdaFunctionArn: !Ref lambdaFunctionArn
+
+    # RestApiDeployment:
+    #   Type: AWS::ApiGateway::Deployment
+    #   DependsOn: ApiGatewayRootMethodApi
+    #   Properties:
+    #     RestApiId: !Ref apiGatewayRestApi
+    #     StageName: dev
+
+    # ### REST API Key ###
+    # RestApiKey:
+    #   Type: AWS::ApiGateway::ApiKey
+    #   Properties:
+    #     Name: fastapi-rest-api-key-${self:provider.stage}
+    #     Enabled: true
+
+    # ### REST API Usage Plan ###
+    # ApiGatewayUsagePlan:
+    #   Type: AWS::ApiGateway::UsagePlan
+    #   DependsOn: RestApiDeployment
+    #   Properties:
+    #     UsagePlanName: fastapi-usage-plan-${self:provider.stage}
+    #     Throttle:
+    #       RateLimit: 100
+    #       BurstLimit: 200
+    #     ApiStages:
+    #       - ApiId: !Ref apiGatewayRestApi
+    #         Stage: dev
+
+    # RestApiKeyUsagePlanAttachment:
+    #   Type: AWS::ApiGateway::UsagePlanKey
+    #   Properties:
+    #     KeyId: !Ref RestApiKey
+    #     KeyType: API_KEY
+    #     UsagePlanId: !Ref ApiGatewayUsagePlan
+Outputs:
+  apiGatewayRestApiId:
+    Description: ApiGatewayRestApi Id
+    Value: !Ref apiGatewayRestApi
+    Export: 
+      Name: !Sub "${project}-${app}-${env}-apiGatewayRestApiId"
