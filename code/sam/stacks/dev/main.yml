@@ -51,30 +51,30 @@ Resources:
             Value: !Ref app
           - Key: env
             Value: !Ref env
-  # ascentChatbotLambdaFunc:
-  #   Type: AWS::CloudFormation::Stack
-  #   DependsOn:
-  #     - iamRole
-  #     - ecrFastApiRepo
-  #   Properties:
-  #     TemplateURL: !Sub "${s3ArtifactPath}/lambdaFunction/lambdaFunction-app.yml"
-  #     Parameters:
-  #       project: !Ref project
-  #       app: !Ref app
-  #       env: !Ref env
-  #       lambdaFunctionName: !Sub "${project}-${app}-${env}-ascentChatbotLambdaFunc"
-  #       runtimeVersion: python3.13
-  #       timeout: 120
-  #       lambdaExecutionRoleArn: !GetAtt iamRole.Outputs.lambdaRoleForAscentChatbotArn
-  #       ecrRepositoryUri: !GetAtt ecrFastApiRepo.Outputs.ecrRepositoryUri
-  #       imageTag: latest
-  #     Tags:
-  #         - Key: project
-  #           Value: !Ref project
-  #         - Key: app
-  #           Value: !Ref app
-  #         - Key: env
-  #           Value: !Ref env
+  ascentChatbotLambdaFunc:
+    Type: AWS::CloudFormation::Stack
+    DependsOn:
+      - iamRole
+      - ecrFastApiRepo
+    Properties:
+      TemplateURL: !Sub "${s3ArtifactPath}/lambdaFunction/lambdaFunction-app.yml"
+      Parameters:
+        project: !Ref project
+        app: !Ref app
+        env: !Ref env
+        lambdaFunctionName: !Sub "${project}-${app}-${env}-ascentChatbotLambdaFunc"
+        runtimeVersion: python3.13
+        timeout: 120
+        lambdaExecutionRoleArn: !GetAtt iamRole.Outputs.lambdaRoleForAscentChatbotArn
+        ecrRepositoryUri: !GetAtt ecrFastApiRepo.Outputs.ecrRepositoryUri
+        imageTag: latest
+      Tags:
+          - Key: project
+            Value: !Ref project
+          - Key: app
+            Value: !Ref app
+          - Key: env
+            Value: !Ref env
   s3CodePipelineBucket:
     Type: AWS::CloudFormation::Stack
     Properties:
@@ -129,8 +129,8 @@ Resources:
         app: !Ref app
         env: !Ref env
         gitHubOwner: 'uzairmansoor-prof'                              
-        githubRepositoryName: 'netsol_ascent_chatbot'
-        githubBranch: main
+        githubRepositoryName: 'Ascent_Chatbot' #'netsol_ascent_chatbot'
+        githubBranch: deployment #main
         lambdaFunctionName: "xyz" #!GetAtt ascentChatbotLambdaFunc.Outputs.lambdaFunctionName
         codePipelineRole: !GetAtt iamRole.Outputs.codePipelineRoleArn
         codePipelineAppName: !Sub "${project}-${app}-${env}-fastApiCodepipeline"
@@ -147,14 +147,15 @@ Resources:
   restApiGateway:
     Type: AWS::CloudFormation::Stack
     DependsOn:
-    # - ascentChatbotLambdaFunc
+    - ascentChatbotLambdaFunc
     Properties:
       TemplateURL: !Sub "${s3ArtifactPath}/apiGateway/apiGateway-app.yml"
       Parameters:
         project: !Ref project
         app: !Ref app
         env: !Ref env
-        # lambdaFunctionArn: !GetAtt ascentChatbotLambdaFunc.Outputs.lambdaFunctionArn
+        lambdaFunctionArn: !GetAtt ascentChatbotLambdaFunc.Outputs.lambdaFunctionArn
+        restApiEndointConfiguration: REGIONAL
       Tags:
         - Key: project
           Value: !Ref project
@@ -171,10 +172,10 @@ Outputs:
     Value: !Ref ecrFastApiRepo
     Export:
       Name: !Sub "${AWS::StackName}-ecrFastApiRepo"
-  # ascentChatbotLambdaFunc:
-  #   Value: !Ref ascentChatbotLambdaFunc
-  #   Export:
-  #     Name: !Sub "${AWS::StackName}-ascentChatbotLambdaFunc"
+  ascentChatbotLambdaFunc:
+    Value: !Ref ascentChatbotLambdaFunc
+    Export:
+      Name: !Sub "${AWS::StackName}-ascentChatbotLambdaFunc"
   s3CodePipelineBucket:
     Value: !Ref s3CodePipelineBucket
     Export:

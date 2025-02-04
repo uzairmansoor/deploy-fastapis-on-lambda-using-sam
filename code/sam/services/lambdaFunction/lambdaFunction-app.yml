@@ -45,7 +45,7 @@ Resources:
         ImageUri: !Sub "${ecrRepositoryUri}:${imageTag}"
       Tags:
           - Key: Name
-            Value: !Sub ${project}-${env}-${app}-{lambdaFunctionName}
+            Value: !Sub ${project}-${env}-${app}-${lambdaFunctionName}
           - Key: project
             Value: !Ref project
           - Key: env
@@ -60,7 +60,7 @@ Outputs:
     Value: !Ref lambdaFunction
     Export:
       Name: !Sub "${lambdaFunctionName}"
-  # lambdaFunctionArn:
-  #   Value: !GetAtt lambdaFunction.Arn
-  #   Export:
-  #     Name: !Sub "${lambdaFunctionName}-Arn"
+  lambdaFunctionArn:
+    Value: !GetAtt lambdaFunction.Arn
+    Export:
+      Name: !Sub "${lambdaFunctionName}-Arn"

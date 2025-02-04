@@ -14,9 +14,14 @@ Parameters:
     Type: String
     Default: app
     Description: Name of the app
-  # lambdaFunctionArn:
-  #   Type: String
-  #   Description: ARN of the lambda function
+  lambdaFunctionArn:
+    Type: String
+    Description: ARN of the lambda function
+  restApiEndointConfiguration:  
+    Type: String
+    Default: REGIONAL
+    AllowedValues: [REGIONAL, EDGE, PRIVATE]
+    Description: REST API endpoint configuration type
 
 Resources:
   ### REST API Gateway ###
@@ -24,37 +29,42 @@ Resources:
       Type: AWS::ApiGateway::RestApi
       Properties:
         Name: !Sub ${project}-${env}-${app}-rest-api
+        EndpointConfiguration:
+          Types:
+            - !Ref restApiEndointConfiguration
 
-    apiGatewayRootResourceApi:
-      Type: AWS::ApiGateway::Resource
+    ApiGatewayRootMethodApi:
+      Type: AWS::ApiGateway::Method
       Properties:
-        ParentId: !GetAtt apiGatewayRestApi.RootResourceId
-        PathPart: /
         RestApiId: !Ref apiGatewayRestApi
+        ResourceId: !GetAtt apiGatewayRestApi.RootResourceId
+        HttpMethod: ANY
+        AuthorizationType: NONE
+        ApiKeyRequired: false
+        Integration:
+          Type: AWS_PROXY
+          IntegrationHttpMethod: POST
+          Uri:
+            !Sub 
+              - "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${LambdaFunctionArn}/invocations"
+              - LambdaFunctionArn: !Ref lambdaFunctionArn
 
-    # ApiGatewayRootMethodApi:
-    #   Type: AWS::ApiGateway::Method
-    #   Properties:
-    #     RestApiId: !Ref apiGatewayRestApi
-    #     ResourceId: !Ref apiGatewayRootResourceApi
-    #     HttpMethod: ANY
-    #     AuthorizationType: NONE
-    #     ApiKeyRequired: false
-    #     Integration:
-    #       Type: AWS_PROXY
-    #       IntegrationHttpMethod: POST
-    #       Uri: 
-    #       Fn::Sub: 
-    #         - "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${LambdaFunctionArn}/invocations"
-    #         - LambdaFunctionArn: !Ref lambdaFunctionArn
+    RestApiDeployment:
+      Type: AWS::ApiGateway::Deployment
+      DependsOn: ApiGatewayRootMethodApi
+      Properties:
+        RestApiId: !Ref apiGatewayRestApi
+        StageName: dev
 
-    # RestApiDeployment:
-    #   Type: AWS::ApiGateway::Deployment
-    #   DependsOn: ApiGatewayRootMethodApi
-    #   Properties:
-    #     RestApiId: !Ref apiGatewayRestApi
-    #     StageName: dev
-
+    apiGatewayLambdaTrigger:
+      Type: AWS::Lambda::Permission
+      Properties:
+        Action: "lambda:InvokeFunction"
+        FunctionName: !Ref lambdaFunctionArn
+        Principal: "s3.amazonaws.com"
+        Principal: apigateway.amazonaws.com
+        SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${apiGatewayRestApi}/*/*"
+    
     # ### REST API Key ###
     # RestApiKey:
     #   Type: AWS::ApiGateway::ApiKey
