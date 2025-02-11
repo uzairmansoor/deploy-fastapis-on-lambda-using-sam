@@ -4,16 +4,4 @@ aws s3 sync . s3://ascent-chatbot-dev-app-us-east-1-677366433603 --exclude ".git
 
 sam deploy --stack-name ascent-chatbot-dev --template-file code/sam/stacks/dev/main.yml --region us-east-1 --capabilities CAPABILITY_NAMED_IAM
 
-aws cloudformation update-stack --stack-name resume-grader-dev --template-body file://code/sam/stacks/dev/main.yml --region us-east-1 --capabilities CAPABILITY_NAMED_IAM
 
-aws cloudformation delete-stack --stack-name resume-grader-dev --region us-east-1
-#New
-aws cloudformation create-stack --stack-name resume-grader-dev --template-body file://code/sam/stacks/dev/main.yml --region us-east-1 --capabilities CAPABILITY_NAMED_IAM
-
-
-$ sam deploy --guided
-    $ sam deploy --template-file packaged.yaml --stack-name sam-app --capabilities CAPABILITY_IAM
-
-    $ sam deploy --parameter-overrides 'ParameterKey=InstanceType,ParameterValue=t1.micro'
-
-    $ sam deploy --parameter-overrides KeyPairName=MyKey InstanceType=t1.micro

@@ -1,6 +1,5 @@
 AWSTemplateFormatVersion: "2010-09-09"
 Description: "CloudFormation Template to deploy lambda functions"
-
 Parameters:
   project:
     Type: String
@@ -32,7 +31,18 @@ Parameters:
   imageTag:
     Type: String
     Description: Tag of an ECR Image
-
+  lambdaMemorySize:
+    Type: Number
+    Default: 512
+    MinValue: 128
+    MaxValue: 10240
+    Description: Amount of memory size in MBs
+  lambdaEphemeralStorage:
+    Type: Number
+    Default: 512
+    MinValue: 512
+    MaxValue: 10240
+    Description: Size of lambda function's /tmp directory
 Resources:
   lambdaFunction:
     Type: AWS::Lambda::Function
@@ -41,6 +51,9 @@ Resources:
       PackageType: Image
       Timeout: !Ref timeout
       Role: !Ref lambdaExecutionRoleArn
+      MemorySize: !Ref lambdaMemorySize
+      EphemeralStorage:
+        Size: !Ref lambdaEphemeralStorage
       Code:
         ImageUri: !Sub "${ecrRepositoryUri}:${imageTag}"
       Tags:

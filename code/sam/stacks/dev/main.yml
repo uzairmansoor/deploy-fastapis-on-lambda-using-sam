@@ -64,10 +64,12 @@ Resources:
         env: !Ref env
         lambdaFunctionName: !Sub "${project}-${app}-${env}-ascentChatbotLambdaFunc"
         runtimeVersion: python3.13
-        timeout: 120
+        timeout: 600
         lambdaExecutionRoleArn: !GetAtt iamRole.Outputs.lambdaRoleForAscentChatbotArn
         ecrRepositoryUri: !GetAtt ecrFastApiRepo.Outputs.ecrRepositoryUri
         imageTag: latest
+        lambdaMemorySize: 10240
+        lambdaEphemeralStorage: 512
       Tags:
           - Key: project
             Value: !Ref project
@@ -188,3 +190,7 @@ Outputs:
     Value: !Ref fastApiCodepipeline
     Export:
       Name: !Sub "${AWS::StackName}-fastApiCodepipeline"
+  restApiGateway:
+    Value: !Ref restApiGateway
+    Export:
+      Name: !Sub "${AWS::StackName}-restApiGateway"
