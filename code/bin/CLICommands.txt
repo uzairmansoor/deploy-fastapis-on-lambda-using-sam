@@ -4,4 +4,10 @@ aws s3 sync . s3://ascent-chatbot-dev-app-us-east-1-677366433603 --exclude ".git
 
 sam deploy --stack-name ascent-chatbot-dev --template-file code/sam/stacks/dev/main.yml --region us-east-1 --capabilities CAPABILITY_NAMED_IAM
 
+                                                        Stage Environment
+
+aws s3 sync . s3://ascent-chatbot-stage-app-us-east-1-677366433603 --exclude ".git/*" --exclude "LICENSE" --exclude "README.md"
+
+sam deploy --stack-name ascent-chatbot-stage --template-file code/sam/stacks/stage/main.yml --region us-east-1 --capabilities CAPABILITY_NAMED_IAM
+
 

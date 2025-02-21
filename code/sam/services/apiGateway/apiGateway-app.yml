@@ -33,22 +33,37 @@ Resources:
         Types:
           - !Ref restApiEndointConfiguration
 
-  apiGatewayRootMethodApi:
-    Type: AWS::ApiGateway::Method
-    Properties:
-      RestApiId: !Ref apiGatewayRestApi
-      ResourceId: !GetAtt apiGatewayRestApi.RootResourceId
-      HttpMethod: GET
-      AuthorizationType: NONE
-      ApiKeyRequired: false
-      Integration:
-        Type: AWS_PROXY
-        IntegrationHttpMethod: POST
-        Uri:
-          !Sub 
-            - "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${LambdaFunctionArn}/invocations"
-            - LambdaFunctionArn: !Ref lambdaFunctionArn
+  # apiGatewayRootMethodApi:
+  #   Type: AWS::ApiGateway::Method
+  #   Properties:
+  #     RestApiId: !Ref apiGatewayRestApi
+  #     ResourceId: !GetAtt apiGatewayRestApi.RootResourceId
+  #     HttpMethod: GET
+  #     AuthorizationType: NONE
+  #     ApiKeyRequired: false
+  #     Integration:
+  #       Type: AWS_PROXY
+  #       IntegrationHttpMethod: POST
+  #       Uri:
+  #         !Sub 
+  #           - "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${LambdaFunctionArn}/invocations"
+  #           - LambdaFunctionArn: !Ref lambdaFunctionArn
 
+  # apiGatewayRootMethodApiOptions:
+  #   Type: AWS::ApiGateway::Method
+  #   Properties:
+  #     RestApiId: !Ref apiGatewayRestApi
+  #     ResourceId: !GetAtt apiGatewayRestApi.RootResourceId
+  #     HttpMethod: OPTIONS
+  #     AuthorizationType: NONE
+  #     ApiKeyRequired: false
+  #     Integration:
+  #       Type: AWS_PROXY
+  #       IntegrationHttpMethod: POST
+  #       Uri:
+  #         !Sub 
+  #           - "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${LambdaFunctionArn}/invocations"
+  #           - LambdaFunctionArn: !Ref lambdaFunctionArn
   apiGatewayResourceLogin:
     Type: AWS::ApiGateway::Resource
     Properties:
@@ -62,6 +77,22 @@ Resources:
       RestApiId: !Ref apiGatewayRestApi
       ResourceId: !Ref apiGatewayResourceLogin
       HttpMethod: POST
+      AuthorizationType: NONE
+      ApiKeyRequired: false
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri:
+          !Sub 
+            - "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${LambdaFunctionArn}/invocations"
+            - LambdaFunctionArn: !Ref lambdaFunctionArn
+
+  apiGatewayLoginMethodApiOptions:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref apiGatewayRestApi
+      ResourceId: !Ref apiGatewayResourceLogin
+      HttpMethod: OPTIONS
       AuthorizationType: NONE
       ApiKeyRequired: false
       Integration:
@@ -95,6 +126,22 @@ Resources:
             - "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${LambdaFunctionArn}/invocations"
             - LambdaFunctionArn: !Ref lambdaFunctionArn
 
+  apiGatewayGetUserHistoryMethodApiOptions:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref apiGatewayRestApi
+      ResourceId: !Ref apiGatewayResourceGetUserHistory
+      HttpMethod: OPTIONS
+      AuthorizationType: NONE
+      ApiKeyRequired: false
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri:
+          !Sub 
+            - "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${LambdaFunctionArn}/invocations"
+            - LambdaFunctionArn: !Ref lambdaFunctionArn
+  
   apiGatewayResourceGetChat:
     Type: AWS::ApiGateway::Resource
     Properties:
@@ -118,6 +165,22 @@ Resources:
             - "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${LambdaFunctionArn}/invocations"
             - LambdaFunctionArn: !Ref lambdaFunctionArn
 
+  apiGatewayGetChatMethodApiOptions:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref apiGatewayRestApi
+      ResourceId: !Ref apiGatewayResourceGetChat
+      HttpMethod: OPTIONS
+      AuthorizationType: NONE
+      ApiKeyRequired: false
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri:
+          !Sub 
+            - "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${LambdaFunctionArn}/invocations"
+            - LambdaFunctionArn: !Ref lambdaFunctionArn
+  
   apiGatewayResourceProcessQuestion:
     Type: AWS::ApiGateway::Resource
     Properties:
@@ -141,10 +204,26 @@ Resources:
             - "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${LambdaFunctionArn}/invocations"
             - LambdaFunctionArn: !Ref lambdaFunctionArn
 
+  apiGatewayProcessQuestionMethodApiOptions:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref apiGatewayRestApi
+      ResourceId: !Ref apiGatewayResourceProcessQuestion
+      HttpMethod: OPTIONS
+      AuthorizationType: NONE
+      ApiKeyRequired: false
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri:
+          !Sub 
+            - "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${LambdaFunctionArn}/invocations"
+            - LambdaFunctionArn: !Ref lambdaFunctionArn
+  
   restApiDeployment:
     Type: AWS::ApiGateway::Deployment
     DependsOn: 
-      - apiGatewayRootMethodApi
+      #- apiGatewayRootMethodApi
       - apiGatewayLoginMethodApi
       - apiGatewayGetUserHistoryMethodApi
       - apiGatewayGetChatMethodApi
